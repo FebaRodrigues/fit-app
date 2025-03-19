@@ -456,10 +456,11 @@ const AdminSettings = ({ adminProfile, setAdminProfile }) => {
     try {
       // Check if the server is reachable before making the request
       try {
-        await axios.get(`${import.meta.env.VITE_API_URL.replace(/\/api$/, '')}/api/health`, { timeout: 5000 });
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        await axios.get(`${apiUrl}/health`, { timeout: 5000 });
       } catch (connectionError) {
         console.error('Server connectivity check failed:', connectionError);
-        setError('Cannot connect to the server. Please check if the server is running and try again. Make sure the API server is running on port 5050.');
+        setError('Cannot connect to the server. Please check your internet connection and try again.');
         setLoading(false);
         return;
       }

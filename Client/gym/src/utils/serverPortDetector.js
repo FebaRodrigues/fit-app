@@ -53,14 +53,12 @@ export const detectServerPort = async () => {
         portDetectionPromise = null;
     }, 30000);
     
-    // Return the promise
     return portDetectionPromise;
 };
 
-// Reset the port detection promise (useful for testing or forcing a new detection)
+// Function to reset port detection
 export const resetPortDetection = () => {
     portDetectionPromise = null;
-    console.log('Port detection reset.');
 };
 
 export default detectServerPort; 

@@ -15,10 +15,9 @@ const ConnectionStatus = () => {
     const checkConnection = async () => {
       try {
         setCheckingConnection(true);
-        const port = localStorage.getItem('serverPort') || '5050';
-        setServerPort(port);
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
         
-        const response = await axios.get(`http://localhost:${port}/api/health`, {
+        const response = await axios.get(`${apiUrl}/health`, {
           timeout: 3000
         });
         
@@ -69,32 +68,16 @@ const ConnectionStatus = () => {
   if (isConnected) return null;
 
   return (
-    <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}>
+    <Box sx={{ position: 'fixed', bottom: 16, right: 16, zIndex: 9999 }}>
       <Alert 
         severity="error" 
-        variant="filled"
         action={
-          <Box>
-            <Button 
-              color="inherit" 
-              size="small" 
-              onClick={handleResetConnection}
-              disabled={checkingConnection}
-            >
-              Reset
-            </Button>
-            <Button 
-              color="inherit" 
-              size="small" 
-              onClick={handleOpenDialog}
-              disabled={checkingConnection}
-            >
-              Configure
-            </Button>
-          </Box>
+          <Button color="inherit" size="small" onClick={handleResetConnection}>
+            Retry Connection
+          </Button>
         }
       >
-        Server connection issue detected
+        Server connection lost. Please check your internet connection.
       </Alert>
 
       <Dialog open={openDialog} onClose={handleCloseDialog}>
