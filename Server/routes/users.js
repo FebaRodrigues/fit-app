@@ -14,6 +14,11 @@ const {
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
+// Handle OPTIONS requests for all routes
+router.options('*', (req, res) => {
+    res.sendStatus(200);
+});
+
 router.post('/register', upload.single('image'), register);
 router.post('/login', login);
 router.get('/', auth(['admin']), getAllUsers);

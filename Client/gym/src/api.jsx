@@ -14,7 +14,11 @@ export const getServerUrl = () => {
 const API = axios.create({
     baseURL: getServerUrl(),
     timeout: 10000,
-    withCredentials: true
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
 });
 
 // Track server status
@@ -94,7 +98,7 @@ const showServerNotRunningMessage = () => {
 // Add request interceptor to update baseURL if needed
 API.interceptors.request.use(
     (config) => {
-        // Update baseURL on each request to ensure we're using the latest port
+        // Update baseURL on each request to ensure we're using the latest URL
         const baseUrl = getServerUrl();
         config.baseURL = baseUrl;
         console.log(`API Request to: ${baseUrl}${config.url}`);
@@ -180,7 +184,7 @@ API.interceptors.response.use(
     (error) => {
         if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
             console.error(`Network error - server may be down or unreachable: ${error.code}`, error.message);
-            showServerNotRunningMessage();
+            serverStatus.markDown();
         } else if (error.response) {
             console.error('Response error:', error.response.status, error.response.data);
             
@@ -189,58 +193,12 @@ API.interceptors.response.use(
                 // Check if we're not on the login page
                 if (!window.location.pathname.includes('/login')) {
                     console.warn('Authentication error, redirecting to login');
-                    
-                    // Get the user role
-                    const role = localStorage.getItem('role');
-                    
-                    // Check if this is a request to /admin/users or /memberships/user - if so, don't redirect
-                    const isAdminUsersRequest = error.config && 
-                                               error.config.url && 
-                                               error.config.url.includes('/admin/users');
-                                               
-                    const isMembershipsRequest = error.config && 
-                                               error.config.url && 
-                                               error.config.url.includes('/memberships/user');
-                    
-                    if (isAdminUsersRequest || isMembershipsRequest) {
-                        console.log('Admin users or memberships request failed with auth error - not redirecting automatically');
-                        return Promise.reject(error);
-                    }
-                    
-                    // Clear token and user data
                     localStorage.removeItem('token');
-                    
-                    // Handle different roles differently
-                    if (role === 'admin') {
-                        console.log('Admin authentication error, clearing admin data');
-                        localStorage.removeItem('adminUser');
-                        // Don't remove role for admin to ensure proper redirect
-                    } else {
-                        localStorage.removeItem('user');
-                        localStorage.removeItem('trainer');
-                        localStorage.removeItem('role');
-                    }
-                    
-                    // Determine the appropriate login page based on the role or current path
-                    let loginPath = '/users/login'; // Default
-                    
-                    if (role === 'admin' || window.location.pathname.includes('/admin')) {
-                        loginPath = '/admin/login';
-                    } else if (role === 'trainer' || window.location.pathname.includes('/trainer')) {
-                        loginPath = '/trainers/login';
-                    }
-                    
-                    // Redirect to the appropriate login page after a short delay
-                    setTimeout(() => {
-                        window.location.href = loginPath;
-                    }, 1000);
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('role');
+                    window.location.href = '/users/login';
                 }
             }
-        } else if (error.request) {
-            console.error('Request error - no response received:', error.request);
-            showServerNotRunningMessage();
-        } else {
-            console.error('Error:', error.message);
         }
         return Promise.reject(error);
     }

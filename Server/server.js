@@ -62,13 +62,18 @@ app.use(express.json());
 
 // CORS configuration
 const corsOptions = {
-  origin: ['https://fit-6vq412v31-feba-rodrigues-projects.vercel.app', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  origin: ['https://fit-j5h3bgemv-feba-rodrigues-projects.vercel.app', 'https://fit-dc29pcuw3-feba-rodrigues-projects.vercel.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
 };
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Serve static files from the public directory
 const publicDir = path.join(__dirname, 'public');
