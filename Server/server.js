@@ -68,6 +68,7 @@ const corsOptions = {
     'https://fit-cpdtlmzvh-feba-rodrigues-projects.vercel.app',
     'https://fit-6vq412v31-feba-rodrigues-projects.vercel.app',
     'https://fit-htdhhb7ld-feba-rodrigues-projects.vercel.app',
+    'https://fit-rimh9p8ss-feba-rodrigues-projects.vercel.app',
     'http://localhost:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -78,10 +79,34 @@ const corsOptions = {
   preflightContinue: true
 };
 
+// Apply CORS middleware before routes
 app.use(cors(corsOptions));
 
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (corsOptions.origin.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
+  next();
+});
+
 // Handle preflight requests for all routes
-app.options('*', cors(corsOptions));
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  if (corsOptions.origin.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
+  res.sendStatus(200);
+});
 
 // Serve static files from the public directory
 const publicDir = path.join(__dirname, 'public');

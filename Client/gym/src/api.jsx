@@ -17,8 +17,7 @@ const API = axios.create({
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Accept': 'application/json'
     }
 });
 
@@ -96,24 +95,30 @@ const showServerNotRunningMessage = () => {
     }
 };
 
-// Add request interceptor to update baseURL if needed
+// Add request interceptor to handle CORS
 API.interceptors.request.use(
     (config) => {
-        // Update baseURL on each request to ensure we're using the latest URL
-        const baseUrl = getServerUrl();
-        config.baseURL = baseUrl;
-        console.log(`API Request to: ${baseUrl}${config.url}`);
-        
-        // If server was previously down, but we're trying again, log it
-        if (serverStatus.isDown && serverStatus.canCheck() && serverStatus.shouldRetry()) {
-            console.log(`Retrying request after server was down. Retry #${serverStatus.retryCount}`);
-        }
-        
+        // Add CORS headers
+        config.headers['Access-Control-Allow-Credentials'] = 'true';
         return config;
     },
     (error) => {
-        console.error('Request error:', error);
         return Promise.reject(error);
+    }
+);
+
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.error('API Error:', error);
+        if (error.code === 'ERR_NETWORK') {
+            throw new Error('Cannot connect to server. Please check if the server is running.');
+        }
+        if (error.response) {
+            throw error.response.data;
+        }
+        throw error;
     }
 );
 
@@ -171,36 +176,6 @@ API.interceptors.request.use(
         return config;
     },
     (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Add response interceptor to handle errors
-API.interceptors.response.use(
-    (response) => {
-        // If we get a successful response, mark the server as up
-        serverStatus.markUp();
-        return response;
-    },
-    (error) => {
-        if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-            console.error(`Network error - server may be down or unreachable: ${error.code}`, error.message);
-            serverStatus.markDown();
-        } else if (error.response) {
-            console.error('Response error:', error.response.status, error.response.data);
-            
-            // If we get a 401 or 403, the token might be invalid
-            if (error.response.status === 401 || error.response.status === 403) {
-                // Check if we're not on the login page
-                if (!window.location.pathname.includes('/login')) {
-                    console.warn('Authentication error, redirecting to login');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('role');
-                    window.location.href = '/users/login';
-                }
-            }
-        }
         return Promise.reject(error);
     }
 );
@@ -715,7 +690,7 @@ export const getAdminUserMemberships = (userId) => {
         });
 };
 
-// User API
+// Login user
 export const loginUser = async (email, password) => {
     try {
         // Clear any existing tokens before login
@@ -729,19 +704,16 @@ export const loginUser = async (email, password) => {
         
         console.log(`Attempting login with API URL: ${apiUrl}`);
         
-        // Create a new axios instance for this request
-        const loginAPI = axios.create({
-            baseURL: apiUrl,
-            timeout: 5000, // Longer timeout for login
+        const response = await axios({
+            method: 'post',
+            url: `${apiUrl}/users/login`,
+            data: { email, password },
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Accept': 'application/json'
             }
         });
-        
-        const response = await loginAPI.post('/users/login', { email, password });
         
         // If login is successful, update the API baseURL
         updateServerPort();
