@@ -67,6 +67,7 @@ const corsOptions = {
     'https://fit-dc29pcuw3-feba-rodrigues-projects.vercel.app',
     'https://fit-cpdtlmzvh-feba-rodrigues-projects.vercel.app',
     'https://fit-6vq412v31-feba-rodrigues-projects.vercel.app',
+    'https://fit-htdhhb7ld-feba-rodrigues-projects.vercel.app',
     'http://localhost:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
