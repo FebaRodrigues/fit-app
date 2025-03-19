@@ -95,29 +95,62 @@ const showServerNotRunningMessage = () => {
     }
 };
 
-// Add request interceptor to handle CORS
+// Add request interceptor for better error handling
 API.interceptors.request.use(
     (config) => {
-        // Add CORS headers
-        config.headers['Access-Control-Allow-Credentials'] = 'true';
+        // Log the request URL for debugging
+        console.log(`Making request to: ${config.baseURL}${config.url}`);
+        
+        // Add auth token if available
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        
         return config;
     },
     (error) => {
+        console.error('Request error:', error);
         return Promise.reject(error);
     }
 );
 
 // Add response interceptor for better error handling
 API.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log(`Successful response from: ${response.config.url}`);
+        return response;
+    },
     (error) => {
         console.error('API Error:', error);
+        
+        // Handle network errors
         if (error.code === 'ERR_NETWORK') {
+            console.error('Network error - server may be unreachable');
             throw new Error('Cannot connect to server. Please check if the server is running.');
         }
+        
+        // Handle CORS errors
+        if (error.code === 'ERR_NETWORK' && error.message.includes('CORS')) {
+            console.error('CORS error detected');
+            throw new Error('CORS error: Unable to access the server. Please check server configuration.');
+        }
+        
+        // Handle authentication errors
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.error('Authentication error');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('role');
+            throw new Error('Authentication failed. Please log in again.');
+        }
+        
+        // Handle other response errors
         if (error.response) {
+            console.error('Server error:', error.response.status, error.response.data);
             throw error.response.data;
         }
+        
         throw error;
     }
 );
@@ -165,20 +198,6 @@ const apiCache = {
         }
     }
 };
-
-// Add a request interceptor to include the auth token
-API.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
 
 // Admin API Functions
 export const getAdminProfile = () => {
@@ -700,7 +719,7 @@ export const loginUser = async (email, password) => {
         localStorage.removeItem('userId');
         
         // Use the API URL from environment variable
-        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const apiUrl = getServerUrl();
         
         console.log(`Attempting login with API URL: ${apiUrl}`);
         
@@ -715,21 +734,19 @@ export const loginUser = async (email, password) => {
             }
         });
         
-        // If login is successful, update the API baseURL
-        updateServerPort();
-        
         return response;
     } catch (error) {
         console.error('Login error:', error);
         
-        // Provide more detailed error messages
-        if (error.response && error.response.status === 401) {
-            throw new Error('Invalid email or password. Please try again.');
-        }
-        
-        // Provide a more user-friendly error message for server connection issues
         if (error.code === 'ERR_NETWORK') {
             throw new Error('Cannot connect to server. Please check if the server is running.');
+        }
+        
+        if (error.response) {
+            if (error.response.status === 401) {
+                throw new Error('Invalid email or password. Please try again.');
+            }
+            throw error.response.data;
         }
         
         throw error;
@@ -739,7 +756,7 @@ export const loginUser = async (email, password) => {
 export const registerUser = async (data) => {
     try {
         // Use the API URL from environment variable
-        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const apiUrl = getServerUrl();
         
         console.log(`Attempting registration with API URL: ${apiUrl}`);
         
@@ -767,9 +784,6 @@ export const registerUser = async (data) => {
                 'Content-Type': data instanceof FormData ? 'multipart/form-data' : 'application/json'
             }
         });
-        
-        // If registration is successful, update the API baseURL
-        updateServerPort();
         
         return response;
     } catch (error) {
