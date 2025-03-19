@@ -14,3 +14,5 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
+
+// Trigger new deployment with environment variables
