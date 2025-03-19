@@ -17,7 +17,8 @@ const API = axios.create({
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Access-Control-Allow-Origin': '*'
     }
 });
 
@@ -731,7 +732,13 @@ export const loginUser = async (email, password) => {
         // Create a new axios instance for this request
         const loginAPI = axios.create({
             baseURL: apiUrl,
-            timeout: 5000 // Longer timeout for login
+            timeout: 5000, // Longer timeout for login
+            withCredentials: true,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
         });
         
         const response = await loginAPI.post('/users/login', { email, password });

@@ -16,6 +16,17 @@ const router = express.Router();
 
 // Handle OPTIONS requests for all routes
 router.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400');
+    res.sendStatus(200);
+});
+
+// Handle OPTIONS requests specifically for /login
+router.options('/login', (req, res) => {
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400');
     res.sendStatus(200);
 });
 
